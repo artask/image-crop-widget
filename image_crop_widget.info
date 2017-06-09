@@ -1,0 +1,5 @@
+name= Image crop widget
+description = Adds a widget allowing to rotate and crop uploaded image
+core = 7.x
+dependencies[] = image
+files[] = image_crop_widget.module
