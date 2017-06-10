@@ -168,6 +168,7 @@ function _image_crop_widget_widget_croparea_validate($element, &$form_state) {
  */
 function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   //dpm(__FUNCTION__);
+    //dsm($element);
   $elements = image_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
   foreach (element_children($elements) as $delta) {
     // Add all extra functionality provided by the imagefield_crop widget.
@@ -197,37 +198,32 @@ function image_crop_widget_widget_process($element, &$form_state, $form) {
   $element['#theme'] = 'image_crop_widget_widget';
   $element['#description'] = t('Click on the image and drag to mark how the image will be cropped');
 
-  $path = drupal_get_path('module', 'imagefield_crop');
-  $element['#attached']['js'][] = "$path/Jcrop/js/jquery.Jcrop.js";
+  $path = drupal_get_path('module', 'image_crop_widget');
+  //$element['#attached']['js'][] = "$path/Jcrop/js/jquery.Jcrop.js";
+  $element['#attached']['js'][] = "$path/croppie/croppie.js";
+    
   // We must define Drupal.behaviors for ahah to work, even if there is no file
-  $element['#attached']['js'][] = "$path/imagefield_crop.js";
-  $element['#attached']['css'][] = "$path/Jcrop/css/jquery.Jcrop.css";
+  $element['#attached']['js'][] = "$path/image_crop_widget.js";
+  //$element['#attached']['css'][] = "$path/Jcrop/css/jquery.Jcrop.css";
+  $element['#attached']['css'][] = "$path/croppie/croppie.css";
 
   if ($element['#file']) {
     $file_to_crop = _image_crop_widget_file_to_crop($element['#file']->fid);
 
-    $element['preview'] = array(
-      '#type' => 'markup',
-      '#file' => $file_to_crop, // This is used by the #process function
-      '#process' => array('image_crop_widget_widget_preview_process'),
-      '#theme' => 'image_crop_widget_preview',
-      '#markup' => theme('image', array(
-                           'path' => $element['#file']->uri,
-                           'getsize' => FALSE,
-                           'attributes' => array('class' => 'preview-existing'))),
-    );
     $element['cropbox'] = array(
-      '#markup' => theme('image', array(
-          'path' => $file_to_crop->uri,
-          'attributes' => array(
-            'class' => 'cropbox',
-            'id' => $element['#id'] . '-cropbox'))),
+        '#type' => 'container',
+        '#attributes' => array(
+            'class' => array('cropbox'),
+            'id' => $element['#id'] . '-cropbox'
+        )
     );
+      
     $element['cropinfo'] = _image_crop_widget_add_cropinfo_fields($element['#file']->fid);
     list($res_w, $res_h) = explode('x', $widget_settings['resolution']);
     list($crop_w, $crop_h) = explode('x', $widget_settings['croparea']);
     $settings = array(
       $element['#id'] => array(
+        'file' => file_create_url($element['#file']->uri),
         'box' => array(
           'ratio' => $res_h ? $widget_settings['enforce_ratio'] * $res_w/$res_h : 0,
           'box_width' => $crop_w,
@@ -237,11 +233,11 @@ function image_crop_widget_widget_process($element, &$form_state, $form) {
           'width'   => $widget_settings['enforce_minimum'] ? $res_w : NULL,
           'height'  => $widget_settings['enforce_minimum'] ? $res_h : NULL,
         ),
-        //'preview' => $preview_js,
+        
       ),
     );
     $element['#attached']['js'][] = array(
-      'data' => array('imagefield_crop' => $settings),
+      'data' => array('image_crop_widget' => $settings),
       'type' => 'setting',
       'scope' => 'header',
       );
@@ -439,9 +435,6 @@ function image_crop_widget_theme() {
   return array(
     'image_crop_widget_widget' => array(
       'render element' => 'element'),
-    'image_crop_widget_preview' => array(
-      'render element' => 'element',
-    ),
   );
 }
 
@@ -452,30 +445,15 @@ function theme_image_crop_widget_widget($variables) {
   $output .= '<div class="imagefield-crop-widget form-managed-file clearfix">';
 
   //$output .= '<pre>' . print_r($element['#attached'],1) . '</pre>';
-  if (isset($element['preview'])) {
-    $output .= '<div class="imagefield-crop-preview">';
-    $output .= drupal_render($element['preview']);
-    $output .= '</div>';
-  }
+  
   if (isset($element['cropbox'])) {
-    $output .= '<div class="imagefield-crop-cropbox">';
     $output .= drupal_render($element['cropbox']);
-    $output .= '</div>';
   }
   $output .= '</div>';
   $output .= drupal_render_children($element);
   return $output;
 }
 
-function theme_image_crop_widget_preview($variables) {
-  //dpm(__FUNCTION__);
-  $info = $variables['element']['#imagefield_crop'];
-  $output = '<div class="jcrop-preview-wrapper" style="width:' . $info['#width'] . 'px;height:' . $info['#height'] . 'px;overflow:hidden;">';
-  $output .= $variables['element']['#markup'];
-  $output .= theme('image', array('path' => $info['#path'], 'alt' => 'jcrop-preview', 'attributes' => array('class' => 'jcrop-preview', 'style' => 'display:none')));
-  $output .= '</div>';
-  return $output;
-}
 
 /*********************/
 /* Internal functions */

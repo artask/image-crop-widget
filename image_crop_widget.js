@@ -1,15 +1,50 @@
 (function ($) {
-/**
- * @file
- * image_crop_widget module js
- *
- * JS for cropping image widget
- */
+    
 Drupal.behaviors.image_crop_widget = {
   attach: function (context, settings) {
     // wait till 'fadeIn' effect ends (defined in filefield_widget.inc)
-    setTimeout(attachJcrop, 1000, context);
+    //setTimeout(attachJcrop, 1000, context);
     //attachJcrop(context);
+      attachCroppie(context);
+      
+    function attachCroppie(context) {
+        if ($('.cropbox', context).length == 0) {
+            return;
+        }
+        
+        $('.cropbox', context).once(function() {
+            var self = $(this);
+
+            //alert("found a cropbox" + self.attr('id'));
+
+            // get the id attribute for multiple image support
+            var self_id = self.attr('id');
+            var id = self_id.substring(0, self_id.indexOf('-cropbox'));
+            // get the name attribute for imagefield name
+            var widget = self.parent().parent();
+
+            if ($(".edit-image-crop-changed", widget).val() == 1) {
+                $('.preview-existing', widget).css({display: 'none'});
+                $('.jcrop-preview', widget).css({display: 'block'});
+            }
+            
+            var el = document.getElementById(self_id);
+            var vanilla = new Croppie(el, {
+                viewport: { width: 100, height: 100 },
+                boundary: { width: 300, height: 300 },
+                showZoomer: false,
+                enableOrientation: true,
+                size: 'original'
+            });
+            vanilla.bind({
+                url: Drupal.settings.image_crop_widget[id].file,
+            });
+            //on button click
+            vanilla.result('blob').then(function(blob) {
+                // do something with cropped blob
+            });
+        });
+    }
 
     function attachJcrop(context) {
       if ($('.cropbox', context).length == 0) {
