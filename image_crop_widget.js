@@ -22,22 +22,27 @@ Drupal.behaviors.image_crop_widget = {
             var id = self_id.substring(0, self_id.indexOf('-cropbox'));
             // get the name attribute for imagefield name
             var widget = self.parent().parent();
-
-            if ($(".edit-image-crop-changed", widget).val() == 1) {
-                $('.preview-existing', widget).css({display: 'none'});
-                $('.jcrop-preview', widget).css({display: 'block'});
-            }
-            
+            console.log(widget);
             var el = document.getElementById(self_id);
             var vanilla = new Croppie(el, {
                 viewport: { width: 100, height: 100 },
                 boundary: { width: 300, height: 300 },
-                showZoomer: false,
+                showZoomer: true,
                 enableOrientation: true,
                 size: 'original'
             });
             vanilla.bind({
                 url: Drupal.settings.image_crop_widget[id].file,
+            });
+            el.addEventListener('update', function (ev) {
+                console.log('vanilla update', ev);
+                
+                
+                $(widget).find(".edit-image-crop-x").val(ev.detail.points[0]);
+                $(widget).find(".edit-image-crop-y").val(ev.detail.points[1]);
+                $(widget).find(".edit-image-crop-width").val(ev.detail.points[2]-ev.detail.points[0]);
+                $(widget).find(".edit-image-crop-height").val(ev.detail.points[3]-ev.detail.points[1]);
+                $(widget).find(".edit-image-crop-changed").val(1);
             });
             //on button click
             vanilla.result('blob').then(function(blob) {

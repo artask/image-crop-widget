@@ -186,8 +186,9 @@ function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $inst
  * An element #process callback for the imagefield_crop field type.
  */
 function image_crop_widget_widget_process($element, &$form_state, $form) {
-  //dpm(__FUNCTION__);
+  dpm(__FUNCTION__);
   //  dpm(array(__FUNCTION__, $element));
+    //dsm($element);
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
 
@@ -199,17 +200,15 @@ function image_crop_widget_widget_process($element, &$form_state, $form) {
   $element['#description'] = t('Click on the image and drag to mark how the image will be cropped');
 
   $path = drupal_get_path('module', 'image_crop_widget');
-  //$element['#attached']['js'][] = "$path/Jcrop/js/jquery.Jcrop.js";
   $element['#attached']['js'][] = "$path/croppie/croppie.js";
     
   // We must define Drupal.behaviors for ahah to work, even if there is no file
   $element['#attached']['js'][] = "$path/image_crop_widget.js";
-  //$element['#attached']['css'][] = "$path/Jcrop/css/jquery.Jcrop.css";
   $element['#attached']['css'][] = "$path/croppie/croppie.css";
 
   if ($element['#file']) {
     $file_to_crop = _image_crop_widget_file_to_crop($element['#file']->fid);
-
+      
     $element['cropbox'] = array(
         '#type' => 'container',
         '#attributes' => array(
@@ -277,7 +276,7 @@ function _image_crop_widget_add_cropinfo_fields($fid = NULL) {
 
 
 function image_crop_widget_widget_preview_process($element, &$form_state, $form) {
-  //dpm(__FUNCTION__);
+  dpm(__FUNCTION__);
   $file = $element['#file'];
   if ($file->fid == 0) {
     return $element;
@@ -322,7 +321,10 @@ function image_crop_widget_widget_preview_process($element, &$form_state, $form)
  * Registered by image_crop_widget_field_widget_form()
  */
 function image_crop_widget_widget_value(&$element, &$input, $form_state) {
-  // set $input['fid'] and that will be the value of the element
+  dsm($input);
+  dsm($element);
+    
+    // set $input['fid'] and that will be the value of the element
   if (!empty($input['fid']) && $input['cropinfo']['changed']) {
 
     // get crop and scale info
@@ -333,6 +335,7 @@ function image_crop_widget_widget_value(&$element, &$input, $form_state) {
     }
 
     $src = file_load($input['fid']);
+      dsm($src);
     $file_to_crop = _image_crop_widget_file_to_crop($src->fid);
     // Copy the original aside, for future cropping
     if ($file_to_crop->fid == $src->fid &&
@@ -439,19 +442,19 @@ function image_crop_widget_theme() {
 }
 
 function theme_image_crop_widget_widget($variables) {
-  //dpm(__FUNCTION__);
-  $element = $variables['element'];
-  $output = '';
-  $output .= '<div class="imagefield-crop-widget form-managed-file clearfix">';
+    //dpm(__FUNCTION__);
+    //dsm($variables);
+    $element = $variables['element'];
+    unset($element['#preview']);
+    $output = '';
+    $output .= '<div class="imagefield-crop-widget form-managed-file clearfix">';
 
-  //$output .= '<pre>' . print_r($element['#attached'],1) . '</pre>';
-  
-  if (isset($element['cropbox'])) {
-    $output .= drupal_render($element['cropbox']);
-  }
-  $output .= '</div>';
-  $output .= drupal_render_children($element);
-  return $output;
+    //$output .= '<pre>' . print_r($element['#attached'],1) . '</pre>';
+
+    if (isset($element['cropbox'])) $output .= drupal_render($element['cropbox']);
+    $output .= '</div>';
+    $output .= drupal_render_children($element);
+    return $output;
 }
 
 
@@ -463,7 +466,7 @@ function theme_image_crop_widget_widget($variables) {
  * Crop the image and resize it
  */
 function _image_crop_widget_resize($src, $crop = NULL, $scale = NULL, $dst = NULL) {
-  //dpm(__FUNCTION__);
+  dpm(__FUNCTION__);
   $image = image_load($src);
   if ($image) {
     $result = TRUE;
