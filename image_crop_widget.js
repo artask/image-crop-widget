@@ -14,7 +14,7 @@ Drupal.behaviors.image_crop_widget = {
         
         $('.cropbox', context).once(function() {
             var self = $(this);
-
+            var deg = 0;
             //alert("found a cropbox" + self.attr('id'));
 
             // get the id attribute for multiple image support
@@ -25,8 +25,11 @@ Drupal.behaviors.image_crop_widget = {
             console.log(widget);
             var el = document.getElementById(self_id);
             var vanilla = new Croppie(el, {
-                viewport: { width: 100, height: 100 },
-                boundary: { width: 300, height: 300 },
+                viewport: { 
+                    width: Drupal.settings.image_crop_widget[id].box.box_width, 
+                    height: Drupal.settings.image_crop_widget[id].box.box_height 
+                },
+                boundary: { width: 400, height: 400 },
                 showZoomer: true,
                 enableOrientation: true,
                 size: 'original'
@@ -47,6 +50,12 @@ Drupal.behaviors.image_crop_widget = {
             //on button click
             vanilla.result('blob').then(function(blob) {
                 // do something with cropped blob
+            });
+            
+            $('.cropbox-rotate').on('click', function(ev) {
+                vanilla.rotate(parseInt($(this).data('deg')));
+                deg += parseInt($(this).data('deg'));
+                $(widget).find(".edit-image-crop-rotate").val(deg);
             });
         });
     }

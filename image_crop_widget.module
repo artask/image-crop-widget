@@ -186,9 +186,11 @@ function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $inst
  * An element #process callback for the imagefield_crop field type.
  */
 function image_crop_widget_widget_process($element, &$form_state, $form) {
-  dpm(__FUNCTION__);
+  watchdog('test', '<pre>'.print_r($form_state, true));
   //  dpm(array(__FUNCTION__, $element));
     //dsm($element);
+if(isset($form_state['triggering_element']) && $form_state['triggering_element']['#value'] == 'Upload') {
+    
   $item = $element['#value'];
   $item['fid'] = $element['fid']['#value'];
 
@@ -217,6 +219,12 @@ function image_crop_widget_widget_process($element, &$form_state, $form) {
         )
     );
       
+      
+    $element['cropbox_buttons'] = array(
+        '#type' => 'markup',
+        '#markup' => '<a href="#" class="button cropbox-rotate" data-deg="-90">Rotate Left</a><a href="#" class="button cropbox-rotate" data-deg="90">Rotate Right</a>',
+    );
+      
     $element['cropinfo'] = _image_crop_widget_add_cropinfo_fields($element['#file']->fid);
     list($res_w, $res_h) = explode('x', $widget_settings['resolution']);
     list($crop_w, $crop_h) = explode('x', $widget_settings['croparea']);
@@ -241,10 +249,12 @@ function image_crop_widget_widget_process($element, &$form_state, $form) {
       'scope' => 'header',
       );
   }
-  
+  unset($element['preview']);
   // prepend submit handler to remove button
   array_unshift($element['remove_button']['#submit'], 'image_crop_widget_widget_delete');
-  
+  watchdog('test', '<pre>'.print_r($element, true));
+    
+}
   return $element;
 }
 
@@ -254,6 +264,7 @@ function _image_crop_widget_add_cropinfo_fields($fid = NULL) {
     'y'       => 0,
     'width'   => 50,
     'height'  => 50,
+    'rotate'    => 0,
     'changed' => 0,
   );
   if ($fid) {
@@ -276,7 +287,7 @@ function _image_crop_widget_add_cropinfo_fields($fid = NULL) {
 
 
 function image_crop_widget_widget_preview_process($element, &$form_state, $form) {
-  dpm(__FUNCTION__);
+  //dpm(__FUNCTION__);
   $file = $element['#file'];
   if ($file->fid == 0) {
     return $element;
@@ -321,8 +332,10 @@ function image_crop_widget_widget_preview_process($element, &$form_state, $form)
  * Registered by image_crop_widget_field_widget_form()
  */
 function image_crop_widget_widget_value(&$element, &$input, $form_state) {
-  dsm($input);
-  dsm($element);
+  //dsm($input);
+  //dsm($element);
+  //watchdog('test', '<pre>'.print_r($form_state, true));
+    dsm($form_state['input']);
     
     // set $input['fid'] and that will be the value of the element
   if (!empty($input['fid']) && $input['cropinfo']['changed']) {
@@ -335,7 +348,7 @@ function image_crop_widget_widget_value(&$element, &$input, $form_state) {
     }
 
     $src = file_load($input['fid']);
-      dsm($src);
+      //dsm($src);
     $file_to_crop = _image_crop_widget_file_to_crop($src->fid);
     // Copy the original aside, for future cropping
     if ($file_to_crop->fid == $src->fid &&
