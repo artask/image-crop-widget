@@ -38,9 +38,6 @@ Drupal.behaviors.image_crop_widget = {
                 url: Drupal.settings.image_crop_widget[id].file,
             });
             el.addEventListener('update', function (ev) {
-                console.log('vanilla update', ev);
-                
-                
                 $(widget).find(".edit-image-crop-x").val(ev.detail.points[0]);
                 $(widget).find(".edit-image-crop-y").val(ev.detail.points[1]);
                 $(widget).find(".edit-image-crop-width").val(ev.detail.points[2]-ev.detail.points[0]);
@@ -56,6 +53,21 @@ Drupal.behaviors.image_crop_widget = {
                 vanilla.rotate(parseInt($(this).data('deg')));
                 deg += parseInt($(this).data('deg'));
                 $(widget).find(".edit-image-crop-rotate").val(deg);
+            });
+            
+            $('.cropbox-crop').on('click', function(ev) {
+                vanilla.result({
+				    type: 'blob',
+                    size: {
+                        'width': 250
+                    }
+                }).then(function (blob) {
+                    console.log(window.URL.createObjectURL(blob));
+                    html = '<img src="' + window.URL.createObjectURL(blob) + '" />';
+                    $(el).html(html);
+                    $('.cropbox-crop').hide();
+                    $('.cropbox-rotate').hide();
+                });
             });
         });
     }

@@ -168,8 +168,11 @@ function _image_crop_widget_widget_croparea_validate($element, &$form_state) {
  */
 function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   //dpm(__FUNCTION__);
+    //dsm($form['field_upload_a_featured_photogra']);
     //dsm($element);
+    
   $elements = image_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
+  //dsm($elements);
   foreach (element_children($elements) as $delta) {
     // Add all extra functionality provided by the imagefield_crop widget.
     $elements[$delta]['#process'][] = 'image_crop_widget_widget_process';
@@ -179,6 +182,7 @@ function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $inst
     $elements[$delta]['#file_value_callbacks'][] = 'image_crop_widget_widget_value';
 
   }
+   // dsm($elements);
   return $elements;
 }
 
@@ -186,76 +190,102 @@ function image_crop_widget_field_widget_form(&$form, &$form_state, $field, $inst
  * An element #process callback for the imagefield_crop field type.
  */
 function image_crop_widget_widget_process($element, &$form_state, $form) {
-  watchdog('test', '<pre>'.print_r($form_state, true));
-  //  dpm(array(__FUNCTION__, $element));
-    //dsm($element);
-if(isset($form_state['triggering_element']) && $form_state['triggering_element']['#value'] == 'Upload') {
-    
-  $item = $element['#value'];
-  $item['fid'] = $element['fid']['#value'];
+//watchdog('test', '<pre>'.print_r($form_state, true));
+//  dpm(array(__FUNCTION__, $element));
+//dsm($element);
+//dsm($form);  
+    //$element['#theme'] = 'image_crop_widget_widget';
+    if(isset($form_state['triggering_element']) && $form_state['triggering_element']['#value'] == 'Upload') {
 
-  $instance = field_info_instance($element['#entity_type'], $element['#field_name'],  $element['#bundle']);
+        $item = $element['#value'];
+        $item['fid'] = $element['fid']['#value'];
 
-  $settings = $instance['settings'];
-  $widget_settings = $instance['widget']['settings'];
-  $element['#theme'] = 'image_crop_widget_widget';
-  $element['#description'] = t('Click on the image and drag to mark how the image will be cropped');
+        $instance = field_info_instance($element['#entity_type'], $element['#field_name'],  $element['#bundle']);
 
-  $path = drupal_get_path('module', 'image_crop_widget');
-  $element['#attached']['js'][] = "$path/croppie/croppie.js";
-    
-  // We must define Drupal.behaviors for ahah to work, even if there is no file
-  $element['#attached']['js'][] = "$path/image_crop_widget.js";
-  $element['#attached']['css'][] = "$path/croppie/croppie.css";
-
-  if ($element['#file']) {
-    $file_to_crop = _image_crop_widget_file_to_crop($element['#file']->fid);
-      
-    $element['cropbox'] = array(
-        '#type' => 'container',
-        '#attributes' => array(
-            'class' => array('cropbox'),
-            'id' => $element['#id'] . '-cropbox'
-        )
-    );
-      
-      
-    $element['cropbox_buttons'] = array(
-        '#type' => 'markup',
-        '#markup' => '<a href="#" class="button cropbox-rotate" data-deg="-90">Rotate Left</a><a href="#" class="button cropbox-rotate" data-deg="90">Rotate Right</a>',
-    );
-      
-    $element['cropinfo'] = _image_crop_widget_add_cropinfo_fields($element['#file']->fid);
-    list($res_w, $res_h) = explode('x', $widget_settings['resolution']);
-    list($crop_w, $crop_h) = explode('x', $widget_settings['croparea']);
-    $settings = array(
-      $element['#id'] => array(
-        'file' => file_create_url($element['#file']->uri),
-        'box' => array(
-          'ratio' => $res_h ? $widget_settings['enforce_ratio'] * $res_w/$res_h : 0,
-          'box_width' => $crop_w,
-          'box_height' => $crop_h,
-        ),
-        'minimum' => array(
-          'width'   => $widget_settings['enforce_minimum'] ? $res_w : NULL,
-          'height'  => $widget_settings['enforce_minimum'] ? $res_h : NULL,
-        ),
+        $settings = $instance['settings'];
+        $widget_settings = $instance['widget']['settings'];
         
-      ),
-    );
-    $element['#attached']['js'][] = array(
-      'data' => array('image_crop_widget' => $settings),
-      'type' => 'setting',
-      'scope' => 'header',
-      );
-  }
-  unset($element['preview']);
-  // prepend submit handler to remove button
-  array_unshift($element['remove_button']['#submit'], 'image_crop_widget_widget_delete');
-  watchdog('test', '<pre>'.print_r($element, true));
+        $element['#description'] = t('Click on the image and drag to mark how the image will be cropped');
+
+        $path = drupal_get_path('module', 'image_crop_widget');
+        $element['#attached']['js'][] = "$path/croppie/croppie.js";
+
+        // We must define Drupal.behaviors for ahah to work, even if there is no file
+        $element['#attached']['js'][] = "$path/image_crop_widget.js";
+        $element['#attached']['css'][] = "$path/croppie/croppie.css";
+
+        if ($element['#file']) {
+            $file_to_crop = _image_crop_widget_file_to_crop($element['#file']->fid);
+            image_path_flush($file_to_crop->uri); 
+
+            $element['cropbox'] = array(
+                '#type' => 'container',
+                '#attributes' => array(
+                    'class' => array('cropbox'),
+                    'id' => $element['#id'] . '-cropbox'
+                ),
+                '#weight' => 0,
+            );
+
+            $element['cropinfo'] = _image_crop_widget_add_cropinfo_fields($element['#file']->fid);
+            list($res_w, $res_h) = explode('x', $widget_settings['resolution']);
+            list($crop_w, $crop_h) = explode('x', $widget_settings['croparea']);
+            $settings = array(
+              $element['#id'] => array(
+                'file' => file_create_url($element['#file']->uri),
+                'box' => array(
+                  'ratio' => $res_h ? $widget_settings['enforce_ratio'] * $res_w/$res_h : 0,
+                  'box_width' => $crop_w,
+                  'box_height' => $crop_h,
+                ),
+                'minimum' => array(
+                  'width'   => $widget_settings['enforce_minimum'] ? $res_w : NULL,
+                  'height'  => $widget_settings['enforce_minimum'] ? $res_h : NULL,
+                ),
+
+              ),
+            );
+            $element['#attached']['js'][] = array(
+              'data' => array('image_crop_widget' => $settings),
+              'type' => 'setting',
+              'scope' => 'header',
+            );
+            $element['rotate_left'] = array(
+                '#type' => 'button', 
+                '#value' => t('Rotate Left'),
+                '#attributes' => array(
+                    'onclick' => 'return (false);',
+                    'data-deg' => '-90',                  
+                    'class' => array('button', 'cropbox-rotate'),
+                ),
+                '#weight' => 20,
+            );
+            $element['rotate_right'] = array(
+                '#type' => 'button', 
+                '#value' => t('Rotate Right'),
+                '#attributes' => array(
+                    'onclick' => 'return (false);',
+                    'data-deg' => '90',                  
+                    'class' => array('button', 'cropbox-rotate'),
+                ),
+                '#weight' => 21,
+            );
+            $element['crop'] = array(
+                '#type' => 'button', 
+                '#value' => t('Crop'),
+                '#attributes' => array(
+                    'class' => array('button', 'cropbox-crop'),    
+                    'onclick' => 'return (false);',
+                ),
+                '#weight' => 22,
+            );
+        }
+        unset($element['preview']);
+    }
     
-}
-  return $element;
+    array_unshift($element['remove_button']['#submit'], 'image_crop_widget_widget_delete');
+    return $element;
+    
 }
 
 function _image_crop_widget_add_cropinfo_fields($fid = NULL) {
@@ -286,46 +316,6 @@ function _image_crop_widget_add_cropinfo_fields($fid = NULL) {
 }
 
 
-function image_crop_widget_widget_preview_process($element, &$form_state, $form) {
-  //dpm(__FUNCTION__);
-  $file = $element['#file'];
-  if ($file->fid == 0) {
-    return $element;
-  }
-  // The widget belongs to the parent, so we got to find it first
-  $parents = array_slice($element['#array_parents'], 0, -1);
-  $parent = drupal_array_get_nested_value($form, $parents);
-  $instance = field_widget_instance($parent, $form_state);
-  if ($instance['widget']['settings']['resolution']) {
-    list($width, $height) = explode('x', $instance['widget']['settings']['resolution']);
-  }
-
-  $image_info = image_get_info(drupal_realpath($file->uri));
-  $settings = array(
-    $parent['#id'] => array(
-      'preview' => array(
-        'orig_width' => $image_info['width'],
-        'orig_height' => $image_info['height'],
-        'width' => (integer)$width,
-        'height' => (integer)$height,
-      ),
-    ),
-  );
-
-  $element['#attached']['js'][] = array(
-    'data' => array('imagefield_crop' => $settings),
-    'type' => 'setting',
-    'scope' => 'header',
-  );
-  $element['#imagefield_crop'] = array(
-    '#file' => $element['#file'],
-    '#width' => $width,
-    '#height' => $height,
-    '#path' => file_create_url($file->uri),
-    );
-  return $element;
-}
-
 /**
  * value callback
  *
@@ -333,9 +323,10 @@ function image_crop_widget_widget_preview_process($element, &$form_state, $form)
  */
 function image_crop_widget_widget_value(&$element, &$input, $form_state) {
   //dsm($input);
+    //dpm(__FUNCTION__);
   //dsm($element);
   //watchdog('test', '<pre>'.print_r($form_state, true));
-    dsm($form_state['input']);
+    //dsm($form_state['input']);
     
     // set $input['fid'] and that will be the value of the element
   if (!empty($input['fid']) && $input['cropinfo']['changed']) {
@@ -374,10 +365,13 @@ function image_crop_widget_widget_value(&$element, &$input, $form_state) {
       $crop_info[$src->fid] = $crop;
       variable_set('image_crop_widget_info', $crop_info);
       // Remove cached versions of the cropped image.
-      image_path_flush($src->uri);
+      image_path_flush($src->uri); 
     }
     
+    
+    
   }
+
 }
 
 function image_crop_widget_widget_delete($form, &$form_state) {
@@ -479,7 +473,7 @@ function theme_image_crop_widget_widget($variables) {
  * Crop the image and resize it
  */
 function _image_crop_widget_resize($src, $crop = NULL, $scale = NULL, $dst = NULL) {
-  dpm(__FUNCTION__);
+  //dpm(__FUNCTION__);
   $image = image_load($src);
   if ($image) {
     $result = TRUE;
