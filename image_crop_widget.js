@@ -4,8 +4,7 @@ Drupal.behaviors.image_crop_widget = {
   attach: function (context, settings) {
     // wait till 'fadeIn' effect ends (defined in filefield_widget.inc)
     //setTimeout(attachJcrop, 1000, context);
-    //attachJcrop(context);
-      attachCroppie(context);
+    attachCroppie(context);
       
     function attachCroppie(context) {
         if ($('.cropbox', context).length == 0) {
@@ -22,7 +21,7 @@ Drupal.behaviors.image_crop_widget = {
             var id = self_id.substring(0, self_id.indexOf('-cropbox'));
             // get the name attribute for imagefield name
             var widget = self.parent().parent();
-            console.log(widget);
+            //console.log(widget);
             var el = document.getElementById(self_id);
             var vanilla = new Croppie(el, {
                 viewport: { 
@@ -33,6 +32,9 @@ Drupal.behaviors.image_crop_widget = {
                 showZoomer: true,
                 enableOrientation: true,
                 size: 'original'
+            });
+            el.addEventListener('update', function (ev) {
+                //console.log('vanilla update', ev);
             });
             vanilla.bind({
                 url: Drupal.settings.image_crop_widget[id].file,
@@ -62,7 +64,7 @@ Drupal.behaviors.image_crop_widget = {
                         'width': 250
                     }
                 }).then(function (blob) {
-                    console.log(window.URL.createObjectURL(blob));
+                    //console.log(window.URL.createObjectURL(blob));
                     html = '<img src="' + window.URL.createObjectURL(blob) + '" />';
                     $(el).html(html);
                     $('.cropbox-crop').hide();
